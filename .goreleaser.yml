@@ -34,10 +34,10 @@ changelog:
       - '^test:'
 brews:
   - name: pout
+    commit_author:
+      email: goreleaser@lix-it.com
     tap: 
       owner: lix-it
       name: homebrew-tap
-      commit_author:
-        email: goreleaser@lix-it.com
       license: "MIT"
 
