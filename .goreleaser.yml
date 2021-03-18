@@ -32,3 +32,12 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+brews:
+  - name: pout
+    tap: 
+      owner: lix-it
+      name: homebrew-tap
+      commit_author:
+        email: goreleaser@lix-it.com
+      license: "MIT"
+
