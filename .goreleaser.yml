@@ -36,8 +36,8 @@ brews:
   - name: pout
     commit_author:
       email: goreleaser@lix-it.com
+    license: "MIT"
     tap: 
       owner: lix-it
       name: homebrew-tap
-      license: "MIT"
 
