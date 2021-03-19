@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package swapi;
+
+message Person {
+    string name = 1;
+    string height = 2;
+    string mass = 3;
+    string hair_color = 4;
+    string skin_color = 5;
+    string eye_color = 6;
+    string birth_year = 7;
+    string gender = 8;
+    string homeworld = 9;
+    repeated string films = 10;
+    repeated string species = 11;
+    repeated string vehicles = 12;
+    repeated string starships = 13;
+    string created = 14;
+    string edited = 15;
+    string url = 16;
+}
