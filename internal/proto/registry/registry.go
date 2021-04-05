@@ -36,6 +36,7 @@ func createProtoRegistry(srcDir string, filename string) (*protoregistry.Files, 
 	}
 	defer os.Remove(tmpFile)
 
+	// how do I get a proto file for he file descriptor set?
 	marshalledDescriptorSet, err := ioutil.ReadFile(tmpFile)
 	if err != nil {
 		return nil, err
