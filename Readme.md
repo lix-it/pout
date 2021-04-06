@@ -14,27 +14,37 @@ Installation & Requirements
 `brew cask install pout` 
 
 Background & Motivation
+- Protobuf is a large and complex project, with many touchpoints. However, to get off the ground, or to try new things requires a lot of cognitive load.
 - It is really hard to hack with protobuf, there are so many things to compile
-- type and folder structure layouts can often be confusing to beginners
+- type and folder structure layouts can often be confusing to beginners, and it becomes cumbersome to operate a script-first approach to your code
 - gRPC is a great tool, but because of the typed nature it is often hard to debug. It's not as easy as you think to load up a server and simply send a few commands to it. There are 'curl' options, but it becomes complicated to send messages there.
 - compiling Protoc Buffers can break flow, especially if you want to test data types
-- you can u se pOut with gRPC curl
+- you can use pOut with gRPC curl
+- protobuf can be used without gRPC, for instance, message queues can be hard to test
 - pOut is designed to take slightly longer to process a file, but make it super simple to get going. 
 - lots of proto files means lots of cognitive overhead
+- If you follow common folder structures the process becomes much easier
 - The new protocol buffers Go layout enabling easy reflection https://blog.golang.org/protobuf-apiv2
 - UNIX philosophy of extremely small programs. pOut in combination with pIn allow you to chain many commands together.
 
 Usage
-`pout [flags] `
+There are 3 variables that any system needs to resolve a proto type:
+1. the base path of the protos, this is assumed to be 'protos' in the current directory. There are overrides available
+2. 
+
+`pout [flags] [args] [--]`
+Here are the variables you can pass in, conflicts are resolved in order of priority (highest priority overrides options from lower priority):
+
 Flags:
 Resolving the message:
-There are 3 variables that any system needs to resolve a proto message:
 `-I A proto base path`
 `-f A proto file & package`
-only -n is required 
+
+Environment Variables:
+PROTO_PATH=/path/to/protos 
 
 Args:
-`[message name] A message name`
+`[package.message name] A message name, prefixed with its package in the notation`
 Input
 `"--" will take the input from stdin`
 `[filename] - will load a json or .pb file in`
@@ -47,6 +57,7 @@ NodeJS
 Python
 Go
 cURL
+`pout swapi.Person ./fixtures/people/luke_skywalker.json`
 
 check the /examples folder for more!
 

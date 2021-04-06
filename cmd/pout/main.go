@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 
+	"github.com/lix-it/pout/internal/proto/message"
 	"github.com/lix-it/pout/internal/proto/registry"
+	"github.com/lix-it/pout/pkg/pout"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var protoPath = flag.String("I", "./protos", "path to proto base folder")
-var protoFile = flag.String("f", "", "path to proto file")
 var verbose = flag.Bool("v", false, "verbose mode. display all messages")
 
 func main() {
@@ -22,18 +22,15 @@ func main() {
 		panic("you must enter a valid proto base path")
 	}
 
-	if *protoFile == "" {
-		panic("you must enter a valid path to a proto file, relative to the base path")
-	}
-
-	msgName := flag.Arg(0)
+	protoPackage, msgName := pout.SplitIdentifier(flag.Arg(0))
 
 	config := Config{
 		Verbose: *verbose,
 	}
 
 	if config.Verbose {
-		fmt.Println("proto path:", path.Join(*protoPath, *protoFile))
+		fmt.Println("proto root:", *protoPath)
+		fmt.Println("proto package:", protoPackage)
 		fmt.Println("message name:", msgName)
 	}
 	// use file or stdin
@@ -52,8 +49,12 @@ func main() {
 		}
 	}
 	defer r.Close()
+	regy, err := registry.BuildProtoRegistry(config.Verbose, *protoPath)
+	if err != nil {
+		panic(fmt.Errorf("error BuildProtoRegistry(): %w", err))
+	}
 
-	msg, err := registry.FromJSON(*protoPath, *protoFile, protoreflect.Name(msgName), r)
+	msg, err := message.FromJSON(config.Verbose, regy, protoPackage, protoreflect.Name(msgName), r)
 	if err != nil {
 		wrapErr := fmt.Errorf("error converting JSON to proto: %w; check whether the message paths and types are correct", err)
 		panic(wrapErr)

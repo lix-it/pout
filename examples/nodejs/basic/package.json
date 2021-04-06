@@ -1,0 +1,12 @@
+{
+    "scripts": {
+        "name": "basic",
+        "main": "main.js",
+        "start": "node main.js",
+        "gen:proto": "protoc -I../../protos --js_out=import_style=commonjs,binary:./pb ../../protos/swapi/resources.proto",
+        "gen:protos": "npm run gen:proto"
+    },
+    "dependencies": {
+        "google-protobuf": "^3.15.6"
+    }
+}
