@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/lix-it/pout/internal/proto/registry"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -12,8 +13,8 @@ import (
 )
 
 // FromJSON creates a dynamic Proto messages from JSON input.
-func FromJSON(verbose bool, registry *protoregistry.Files, protoPackage string, msgName protoreflect.Name, jsonReader io.Reader) (proto.Message, error) {
-	msg, err := MakeDynamicMessage(verbose, registry, protoPackage, msgName)
+func FromJSON(verbose bool, rgy *protoregistry.Files, protoPackage string, msgName protoreflect.Name, jsonReader io.Reader) (proto.Message, error) {
+	msg, err := registry.MakeDynamicMessage(verbose, rgy, protoPackage, msgName)
 	if err != nil {
 		return nil, fmt.Errorf("error MakeDynamicMessage(): %w", err)
 	}

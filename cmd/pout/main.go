@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"time"
 
 	"github.com/lix-it/pout/internal/proto/message"
 	"github.com/lix-it/pout/internal/proto/registry"
@@ -15,14 +17,29 @@ import (
 
 var protoPath = flag.String("I", "./protos", "path to proto base folder")
 var verbose = flag.Bool("v", false, "verbose mode. display all messages")
+var debug = flag.Bool("debug", false, "debug mode. Display debug messages")
 
 func main() {
 	flag.Parse()
+	// set up logger
+	log.SetPrefix("pout: ")
+	loggingFlags := 0
+	if *debug {
+		loggingFlags = log.Llongfile
+	}
+	var start time.Time
+	if *verbose {
+		start = time.Now()
+	}
+	log.SetFlags(loggingFlags)
 	if *protoPath == "" {
-		panic("you must enter a valid proto base path")
+		log.Fatal("you must enter a valid proto base path")
 	}
 
-	protoPackage, msgName := pout.SplitIdentifier(flag.Arg(0))
+	protoPackage, msgName, err := pout.SplitIdentifier(flag.Arg(0))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	config := Config{
 		Verbose: *verbose,
@@ -45,23 +62,26 @@ func main() {
 		var err error
 		r, err = os.Open(flag.Arg(1))
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}
 	defer r.Close()
 	regy, err := registry.BuildProtoRegistry(config.Verbose, *protoPath)
 	if err != nil {
-		panic(fmt.Errorf("error BuildProtoRegistry(): %w", err))
+		log.Fatal(fmt.Errorf("error BuildProtoRegistry(): %w", err))
 	}
 
 	msg, err := message.FromJSON(config.Verbose, regy, protoPackage, protoreflect.Name(msgName), r)
 	if err != nil {
 		wrapErr := fmt.Errorf("error converting JSON to proto: %w; check whether the message paths and types are correct", err)
-		panic(wrapErr)
+		log.Fatal(wrapErr)
 	}
 	b, err := proto.Marshal(msg)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	fmt.Printf("%s", b)
+	if *verbose {
+		log.Printf("printing took %v", time.Since(start))
+	}
 }
