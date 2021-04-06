@@ -1,8 +1,6 @@
 package registry
 
 import (
-	"fmt"
-	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -11,13 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 // BuildProtoRegistry walks through every file in the proto folder
@@ -77,58 +72,4 @@ func BuildProtoRegistry(verbose bool, srcDir string) (*protoregistry.Files, erro
 	}
 
 	return files, nil
-}
-
-func UnmarshalProto(verbose bool, protoPath, protoPackage string, msgName protoreflect.Name, in []byte) []byte {
-	msg, err := MakeDynamicMessage(verbose, protoPath, protoPackage, msgName)
-	if err != nil {
-		panic(err)
-	}
-	err = proto.Unmarshal(in, msg)
-	if err != nil {
-		panic(err)
-	}
-	jsonBytes, err := protojson.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-	return jsonBytes
-}
-
-// MakeDynamicMessage creates an unhydrated proto message using the registry information
-func MakeDynamicMessage(verbose bool, protoPath, protoPackage string, msgName protoreflect.Name) (proto.Message, error) {
-	registry, err := BuildProtoRegistry(verbose, protoPath)
-	if err != nil {
-		return nil, fmt.Errorf("error BuildProtoRegistry(): %w", err)
-	}
-	var req protoreflect.MessageDescriptor
-	registry.RangeFilesByPackage(protoreflect.FullName(protoPackage), func(fd protoreflect.FileDescriptor) bool {
-		req = fd.Messages().ByName(msgName)
-		if verbose {
-			fmt.Println("package file:", fd.Name())
-		}
-		return req == nil
-	})
-	if req == nil {
-		panic("no message found!")
-	}
-	msg := dynamicpb.NewMessage(req)
-	return msg, nil
-}
-
-// FromJSON creates a dynamic Proto messages from JSON input.
-func FromJSON(verbose bool, protoPath, protoFile string, msgName protoreflect.Name, jsonReader io.Reader) (proto.Message, error) {
-	msg, err := MakeDynamicMessage(verbose, protoPath, protoFile, msgName)
-	if err != nil {
-		return nil, fmt.Errorf("error MakeDynamicMessage(): %w", err)
-	}
-	inB, err := ioutil.ReadAll(jsonReader)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := protojson.Unmarshal(inB, msg); err != nil {
-		return nil, fmt.Errorf("error protojson.Unmarshal(): %w", err)
-	}
-	return msg, nil
 }

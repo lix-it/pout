@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/lix-it/pout/internal/proto/message"
 	"github.com/lix-it/pout/internal/proto/registry"
 	"github.com/lix-it/pout/pkg/pout"
 	"google.golang.org/protobuf/proto"
@@ -48,8 +49,12 @@ func main() {
 		}
 	}
 	defer r.Close()
+	regy, err := registry.BuildProtoRegistry(config.Verbose, *protoPath)
+	if err != nil {
+		panic(fmt.Errorf("error BuildProtoRegistry(): %w", err))
+	}
 
-	msg, err := registry.FromJSON(config.Verbose, *protoPath, protoPackage, protoreflect.Name(msgName), r)
+	msg, err := message.FromJSON(config.Verbose, regy, protoPackage, protoreflect.Name(msgName), r)
 	if err != nil {
 		wrapErr := fmt.Errorf("error converting JSON to proto: %w; check whether the message paths and types are correct", err)
 		panic(wrapErr)
