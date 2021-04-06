@@ -3,10 +3,13 @@ package registry
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"strings"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -17,26 +20,47 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
+// BuildProtoRegistry walks through every file in the proto folder
+// to build up a protoregistry.Files array with every single file in here.
+// TODO: use a user-defined filter on the paths walked to improve performance
 // TODO: don't use protoc
-func createProtoRegistry(srcDir string, filename string) (*protoregistry.Files, error) {
-	// Create descriptors using the protoc binary.
-	// Imported dependencies are included so that the descriptors are self-contained.
-	tmpFile := path.Base(filename) + "-tmp.pb"
-	cmd := exec.Command("protoc",
-		"--include_imports",
-		"--descriptor_set_out="+tmpFile,
-		"-I"+srcDir,
-		path.Join(srcDir, filename))
+func BuildProtoRegistry(verbose bool, srcDir string) (*protoregistry.Files, error) {
+	f := []string{}
+	err := filepath.WalkDir(srcDir,
+		func(p string, info fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() && filepath.Ext(p) == ".proto" {
+				// remove root from dir
+				pp := strings.SplitN(p, "/", 2)
+				f = append(f, path.Join(srcDir, pp[1]))
+			}
 
-	cmd.Stdout = os.Stdout
+			return nil
+		})
+	if err != nil {
+		panic(err)
+	} // Create descriptors using the protoc binary.
+
+	// Imported dependencies are included so that the descriptors are self-contained.
+	tmpFile := path.Base("descriptor_set") + "-tmp.pb"
+	args := []string{"--include_imports", "--descriptor_set_out=" + tmpFile, "-I" + srcDir}
+	args = append(args, f...)
+	cmd := exec.Command("protoc",
+		args...)
+
+	if verbose {
+		cmd.Stdout = os.Stdout
+	}
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return nil, err
 	}
 	defer os.Remove(tmpFile)
 
-	// how do I get a proto file for he file descriptor set?
+	// how do I get a proto file for the file descriptor set?
 	marshalledDescriptorSet, err := ioutil.ReadFile(tmpFile)
 	if err != nil {
 		return nil, err
@@ -55,13 +79,15 @@ func createProtoRegistry(srcDir string, filename string) (*protoregistry.Files, 
 	return files, nil
 }
 
-func UnmarshalProto(protoPath, protoFile string, msgName protoreflect.Name, in []byte) []byte {
-	msg, err := MakeDynamicMessage(protoPath, protoFile, msgName)
+func UnmarshalProto(verbose bool, protoPath, protoPackage string, msgName protoreflect.Name, in []byte) []byte {
+	msg, err := MakeDynamicMessage(verbose, protoPath, protoPackage, msgName)
 	if err != nil {
 		panic(err)
 	}
-
 	err = proto.Unmarshal(in, msg)
+	if err != nil {
+		panic(err)
+	}
 	jsonBytes, err := protojson.Marshal(msg)
 	if err != nil {
 		panic(err)
@@ -70,25 +96,29 @@ func UnmarshalProto(protoPath, protoFile string, msgName protoreflect.Name, in [
 }
 
 // MakeDynamicMessage creates an unhydrated proto message using the registry information
-func MakeDynamicMessage(protoPath, protoFile string, msgName protoreflect.Name) (proto.Message, error) {
-	registry, err := createProtoRegistry(protoPath, protoFile)
+func MakeDynamicMessage(verbose bool, protoPath, protoPackage string, msgName protoreflect.Name) (proto.Message, error) {
+	registry, err := BuildProtoRegistry(verbose, protoPath)
 	if err != nil {
-		return nil, fmt.Errorf("error createProtoRegistry(): %w", err)
+		return nil, fmt.Errorf("error BuildProtoRegistry(): %w", err)
 	}
-
-	desc, err := registry.FindFileByPath(protoFile)
-	if err != nil {
-		return nil, fmt.Errorf("error registry.FindFileByPath(): %w", err)
+	var req protoreflect.MessageDescriptor
+	registry.RangeFilesByPackage(protoreflect.FullName(protoPackage), func(fd protoreflect.FileDescriptor) bool {
+		req = fd.Messages().ByName(msgName)
+		if verbose {
+			fmt.Println("package file:", fd.Name())
+		}
+		return req == nil
+	})
+	if req == nil {
+		panic("no message found!")
 	}
-	fd := desc.Messages()
-	req := fd.ByName(msgName)
 	msg := dynamicpb.NewMessage(req)
 	return msg, nil
 }
 
 // FromJSON creates a dynamic Proto messages from JSON input.
-func FromJSON(protoPath, protoFile string, msgName protoreflect.Name, jsonReader io.Reader) (proto.Message, error) {
-	msg, err := MakeDynamicMessage(protoPath, protoFile, msgName)
+func FromJSON(verbose bool, protoPath, protoFile string, msgName protoreflect.Name, jsonReader io.Reader) (proto.Message, error) {
+	msg, err := MakeDynamicMessage(verbose, protoPath, protoFile, msgName)
 	if err != nil {
 		return nil, fmt.Errorf("error MakeDynamicMessage(): %w", err)
 	}
