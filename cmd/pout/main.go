@@ -41,7 +41,7 @@ func main() {
 		log.Fatal("you must enter a valid proto base path")
 	}
 
-	protoPackage, msgName, err := pout.SplitIdentifier(flag.Arg(0))
+	protoPackage, msgName, err := pout.SplitIdentifier(flag.Arg(1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func main() {
 	r = os.Stdin
 	if !useStdin {
 		var err error
-		r, err = os.Open(flag.Arg(1))
+		r, err = os.Open(flag.Arg(0))
 		if err != nil {
 			log.Fatal(err)
 		}
