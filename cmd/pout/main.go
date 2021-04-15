@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 	// set up logger
-	log.SetPrefix("pout: ")
+	log.SetPrefix("pOut: ")
 	loggingFlags := 0
 	if *debug {
 		loggingFlags = log.Llongfile
@@ -37,10 +37,13 @@ func main() {
 		start = time.Now()
 	}
 	log.SetFlags(loggingFlags)
-	if *protoPath == "" {
-		log.Fatal("you must enter a valid proto base path")
+	// validate inputs
+	if err := validateArgs(); err != nil {
+		log.Fatal(err)
 	}
-
+	if err := validateFlags(); err != nil {
+		log.Fatal(err)
+	}
 	protoPackage, msgName, err := pout.SplitIdentifier(flag.Arg(1))
 	if err != nil {
 		log.Fatal(err)
