@@ -57,9 +57,12 @@ NodeJS
 Python
 Go
 cURL
-`pout swapi.Person ./fixtures/people/luke_skywalker.json`
-
+`pout ./fixtures/people/luke_skywalker.json` swapi.Person
+kafkacat
+`pout ./fixtures/people/luke_skywalker.json swapi.Person | kafkacat -b kafka:9092 -t lightsaber-swing-events`
 check the /examples folder for more!
+Measure message size
+pout ./fixtures/people/luke_skywalker.json swapi.Person | wc -s
 
 Notes
 
