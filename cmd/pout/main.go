@@ -16,11 +16,16 @@ import (
 )
 
 var protoPath = flag.String("I", "./protos", "path to proto base folder")
-var verbose = flag.Bool("v", false, "verbose mode. display all messages")
-var debug = flag.Bool("debug", false, "debug mode. Display debug messages")
+var verbose = flag.Bool("v,verbose", false, "verbose mode. Display messages relating to proto registry and messages")
+var debug = flag.Bool("d,debug", false, "debug mode. Display debug messages")
+var help = flag.Bool("h,help", false, "help")
 
 func main() {
 	flag.Parse()
+	if *help {
+		flag.Usage()
+		return
+	}
 	// set up logger
 	log.SetPrefix("pout: ")
 	loggingFlags := 0
