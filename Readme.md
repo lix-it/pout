@@ -1,5 +1,3 @@
-pOut - for hackers who like types // Protocol Buffer
-
 pOut is a printer for Protocol Buffers. It can read from stdin or files and produce bytes printed to Stdout. These can then be piped to other programs. Using Protocol Buffers in this way enables rapid development and debugging, a faster feedback cycle, and 
 
 Features
