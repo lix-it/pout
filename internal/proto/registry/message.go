@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
@@ -20,7 +21,7 @@ func MakeDynamicMessage(verbose bool, registry *protoregistry.Files, protoPackag
 		return req == nil
 	})
 	if req == nil {
-		panic("no message found!")
+		return nil, errors.New("message definition not found in registry")
 	}
 	msg := dynamicpb.NewMessage(req)
 	return msg, nil
